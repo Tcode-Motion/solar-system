@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar System Control</title>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <style>
+        body { margin: 0; background-color: #000; overflow: hidden; font-family: sans-serif; }
+        #container { position: relative; width: 100vw; height: 100vh; }
+        
+        /* Mirror video for natural feel */
+        #input_video { 
+            position: absolute; 
+            bottom: 10px; 
+            right: 10px; 
+            width: 320px; 
+            height: 180px; 
+            transform: scaleX(-1); 
+            opacity: 0.5;
+            border: 1px solid #333;
+            z-index: 100;
+        }
+        
+        #output_canvas { 
+            position: absolute; 
+            bottom: 10px; 
+            right: 10px; 
+            width: 320px; 
+            height: 180px; 
+            transform: scaleX(-1);
+            z-index: 101;
+            pointer-events: none;
+        }
+
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: rgba(255,255,255,0.7);
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 5px;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        #error-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            color: #ff5555;
+            padding: 20px;
+            z-index: 9999;
+            display: none;
+            font-family: monospace;
+            white-space: pre-wrap;
+            box-sizing: border-box;
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #00ffff;
+            font-size: 24px;
+            z-index: 200;
+            pointer-events: none;
+            text-shadow: 0 0 10px #00ffff;
+        }
+    </style>
+    <!-- MediaPipe Hands -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <!-- Three.js Import Map -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.161/build/three.module.js",
+                "jsm/": "https://cdn.jsdelivr.net/npm/three@0.161/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="error-overlay"></div>
+    <div id="loading">Loading Solar System...</div>
+    <div id="container">
+        <video id="input_video"></video>
+        <canvas id="output_canvas"></canvas>
+        <div id="instructions">
+            <h3>Controls</h3>
+            <p><b>Right Hand:</b> Move to Rotate Camera. Point to Hover. <b>Fist</b> to Go To Planet.</p>
+            <p><b>Left Hand:</b> Pinch + Move Up/Down to Zoom.</p>
+        </div>
+    </div>
+
+    <script>
+        // Feature check for Service Worker (ES5 compatible)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('./sw.js').then(function(registration) {
+                    console.log('SW registered: ', registration);
+                }).catch(function(registrationError) {
+                    console.log('SW registration failed: ', registrationError);
+                });
+            });
+        }
+
+        var errorOverlay = document.getElementById('error-overlay');
+        window.onerror = function(msg, url, line, col, error) {
+            errorOverlay.style.display = 'block';
+            // Use string concatenation instead of template literals for max compatibility
+            var errorText = 'Error: ' + msg + '\nLine: ' + line + '\nFile: ' + url + '\n\n';
+            if (errorOverlay.innerText) {
+                errorOverlay.innerText += errorText;
+            } else {
+                errorOverlay.textContent += errorText;
+            }
+            var loading = document.getElementById('loading');
+            if (loading) loading.style.display = 'none';
+            return false;
+        };
+
+        if (window.location.protocol === 'file:') {
+            errorOverlay.style.display = 'block';
+            errorOverlay.innerText += "CRITICAL WARNING: You are running this file directly (file://).\n";
+            errorOverlay.innerText += "Browsers block ES Modules and Camera access in this mode.\n";
+            errorOverlay.innerText += "Please run a local server (e.g., 'python -m http.server') and access via http://localhost:8000.\n";
+        }
+    </script>
+    <script type="module" src="./main.js?v=4"></script>
+</body>
+</html>
