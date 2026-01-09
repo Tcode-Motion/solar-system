@@ -484,3 +484,28 @@ function toggleView() {
         btnToggleView.innerText = "Switch to 3D View";
     }
 }// force update 
+
+// OPTIMIZED V2 CODE
+import * as THREE from 'https://cdn.skypack.dev/three@0.129.0/build/three.module.js';
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: false }); // Performance boost
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// LOW POLY GEOMETRY (The Big Difference)
+const geometry = new THREE.SphereGeometry(32, 32); // V1 has 128, 128
+const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+const cube = new THREE.Mesh(geometry, material);
+scene.add(cube);
+
+camera.position.z = 100;
+
+function animate() {
+    requestAnimationFrame(animate);
+    cube.rotation.x += 0.01;
+    cube.rotation.y += 0.01;
+    renderer.render(scene, camera);
+}
+animate();
