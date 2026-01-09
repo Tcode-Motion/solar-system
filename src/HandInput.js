@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 export class HandInput {
   constructor(videoElement, canvasElement) {
     this.videoElement = videoElement;
@@ -5,14 +7,14 @@ export class HandInput {
     this.canvasCtx = canvasElement.getContext('2d');
     
     this.handsData = {
-      left: null, // { x, y, z, gesture: 'open'|'fist'|'pinch' }
+      left: null, 
       right: null
     };
 
-    // Smoothing state
     this.smoothedRight = null;
     this.smoothedLeft = null;
     this.smoothingFactor = 0.15; 
+    this.frameCount = 0;
 
     this.isReady = false;
     this.status = "Initializing Hand Tracking...";
@@ -27,7 +29,9 @@ export class HandInput {
 
     const hands = new window.Hands({locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
     
-    // Performance Mode: Lite model, 1 hand
+    // ULTRA PERFORMANCE MODE:
+    // 1. Lite Model (0)
+    // 2. Max 1 Hand (halves processing)
     hands.setOptions({
       maxNumHands: 1, 
       modelComplexity: 0, 
@@ -39,14 +43,19 @@ export class HandInput {
 
     const camera = new window.Camera(this.videoElement, {
       onFrame: async () => {
+        this.frameCount++;
+        // SUPER THROTTLE: Run inference only every 4th frame (~15 FPS tracking)
+        // This is the key to preventing GPU lockup on old laptops.
+        if (this.frameCount % 4 !== 0) return;
+
         if (this.videoElement.videoWidth) {
              this.canvasElement.width = this.videoElement.videoWidth;
              this.canvasElement.height = this.videoElement.videoHeight;
         }
         await hands.send({image: this.videoElement});
       },
-      width: 1280,
-      height: 720
+      width: 320,  // LOW RES INPUT: 320x240 is enough for cursors, vast speedup
+      height: 240
     });
     
     await camera.start();
@@ -55,9 +64,11 @@ export class HandInput {
   }
 
   onResults(results) {
+    // Skip drawing debug lines to canvas if we want max perf, 
+    // but user might want feedback. We'll draw minimal.
     this.canvasCtx.save();
     this.canvasCtx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
-    this.canvasCtx.drawImage(results.image, 0, 0, this.canvasElement.width, this.canvasElement.height);
+    // this.canvasCtx.drawImage(results.image, 0, 0, ...); // Skip drawing video feed to canvas, save GPU
     
     this.handsData.left = null;
     this.handsData.right = null;
@@ -66,23 +77,16 @@ export class HandInput {
       for (const [index, landmarks] of results.multiHandLandmarks.entries()) {
         const label = results.multiHandedness[index].label; 
         
-        window.drawConnectors(this.canvasCtx, landmarks, window.HAND_CONNECTIONS, {color: '#00FF00', lineWidth: 1});
-        window.drawLandmarks(this.canvasCtx, landmarks, {color: '#FF0000', lineWidth: 1});
+        // Minimal drawing
+        window.drawConnectors(this.canvasCtx, landmarks, window.HAND_CONNECTIONS, {color: '#00FF00', lineWidth: 2});
 
         const gesture = this.detectGesture(landmarks);
         
         const x = (landmarks[0].x + landmarks[9].x) / 2;
         const y = (landmarks[0].y + landmarks[9].y) / 2;
-        
         const pinchDist = Math.hypot(landmarks[4].x - landmarks[8].x, landmarks[4].y - landmarks[8].y);
 
-        const handInfo = {
-            x: x, 
-            y: y, 
-            landmarks: landmarks,
-            gesture: gesture,
-            pinchDistance: pinchDist
-        };
+        const handInfo = { x, y, landmarks, gesture, pinchDistance: pinchDist };
 
         if (label === 'Left') {
             if (!this.smoothedLeft) this.smoothedLeft = handInfo;
@@ -90,17 +94,14 @@ export class HandInput {
                 this.smoothedLeft.x = this.lerp(this.smoothedLeft.x, handInfo.x, this.smoothingFactor);
                 this.smoothedLeft.y = this.lerp(this.smoothedLeft.y, handInfo.y, this.smoothingFactor);
                 this.smoothedLeft.gesture = handInfo.gesture; 
-                this.smoothedLeft.pinchDistance = handInfo.pinchDistance;
             }
             this.handsData.left = this.smoothedLeft;
-        }
-        else {
+        } else {
             if (!this.smoothedRight) this.smoothedRight = handInfo;
             else {
                 this.smoothedRight.x = this.lerp(this.smoothedRight.x, handInfo.x, this.smoothingFactor);
                 this.smoothedRight.y = this.lerp(this.smoothedRight.y, handInfo.y, this.smoothingFactor);
                 this.smoothedRight.gesture = handInfo.gesture;
-                this.smoothedRight.pinchDistance = handInfo.pinchDistance;
             }
             this.handsData.right = this.smoothedRight;
         }
@@ -122,18 +123,11 @@ export class HandInput {
   detectGesture(landmarks) {
     const fingers = [8, 12, 16, 20];
     const knuckles = [6, 10, 14, 18];
-    
     let openCount = 0;
     for(let i=0; i<4; i++) {
         if (landmarks[fingers[i]].y < landmarks[knuckles[i]].y) openCount++;
     }
-    
     if (openCount === 0) return 'fist';
-    if (openCount === 4) return 'open';
-    
-    const pinchDist = Math.hypot(landmarks[4].x - landmarks[8].x, landmarks[4].y - landmarks[8].y);
-    if (pinchDist < 0.05) return 'pinch';
-    
     return 'neutral';
   }
 

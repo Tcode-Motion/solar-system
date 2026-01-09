@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solar System Control</title>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     <style>
         body { margin: 0; background-color: #000; overflow: hidden; font-family: sans-serif; }
         #container { position: relative; width: 100vw; height: 100vh; }
@@ -102,11 +103,29 @@
     </div>
 
     <script>
-        const errorOverlay = document.getElementById('error-overlay');
+        // Feature check for Service Worker (ES5 compatible)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('./sw.js').then(function(registration) {
+                    console.log('SW registered: ', registration);
+                }).catch(function(registrationError) {
+                    console.log('SW registration failed: ', registrationError);
+                });
+            });
+        }
+
+        var errorOverlay = document.getElementById('error-overlay');
         window.onerror = function(msg, url, line, col, error) {
             errorOverlay.style.display = 'block';
-            errorOverlay.innerText += `Error: ${msg}\nLine: ${line}\nFile: ${url}\n\n`;
-            document.getElementById('loading').style.display = 'none';
+            // Use string concatenation instead of template literals for max compatibility
+            var errorText = 'Error: ' + msg + '\nLine: ' + line + '\nFile: ' + url + '\n\n';
+            if (errorOverlay.innerText) {
+                errorOverlay.innerText += errorText;
+            } else {
+                errorOverlay.textContent += errorText;
+            }
+            var loading = document.getElementById('loading');
+            if (loading) loading.style.display = 'none';
             return false;
         };
 
@@ -117,6 +136,6 @@
             errorOverlay.innerText += "Please run a local server (e.g., 'python -m http.server') and access via http://localhost:8000.\n";
         }
     </script>
-    <script type="module" src="./main.js"></script>
+    <script type="module" src="./main.js?v=4"></script>
 </body>
 </html>
