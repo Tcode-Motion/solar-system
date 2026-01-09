@@ -12,7 +12,7 @@ export class HandInput {
     // Smoothing state
     this.smoothedRight = null;
     this.smoothedLeft = null;
-    this.smoothingFactor = 0.15; // Lower = smoother but more lag
+    this.smoothingFactor = 0.15; 
 
     this.isReady = false;
     this.status = "Initializing Hand Tracking...";
@@ -27,9 +27,10 @@ export class HandInput {
 
     const hands = new window.Hands({locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
     
+    // Performance Mode: Lite model, 1 hand
     hands.setOptions({
-      maxNumHands: 1, // Limit to 1 hand for performance
-      modelComplexity: 0, // Lite model (fastest)
+      maxNumHands: 1, 
+      modelComplexity: 0, 
       minDetectionConfidence: 0.5,
       minTrackingConfidence: 0.5
     });
@@ -63,25 +64,21 @@ export class HandInput {
 
     if (results.multiHandLandmarks) {
       for (const [index, landmarks] of results.multiHandLandmarks.entries()) {
-        const label = results.multiHandedness[index].label; // "Left" or "Right"
+        const label = results.multiHandedness[index].label; 
         
-        // Draw
         window.drawConnectors(this.canvasCtx, landmarks, window.HAND_CONNECTIONS, {color: '#00FF00', lineWidth: 1});
         window.drawLandmarks(this.canvasCtx, landmarks, {color: '#FF0000', lineWidth: 1});
 
-        // Analyze Gesture
         const gesture = this.detectGesture(landmarks);
         
-        // Position (Center of palm approx by index 0 and 9)
         const x = (landmarks[0].x + landmarks[9].x) / 2;
         const y = (landmarks[0].y + landmarks[9].y) / 2;
         
-        // Pinch distance (Thumb tip 4 to Index tip 8)
         const pinchDist = Math.hypot(landmarks[4].x - landmarks[8].x, landmarks[4].y - landmarks[8].y);
 
         const handInfo = {
-            x: x, // 0..1
-            y: y, // 0..1
+            x: x, 
+            y: y, 
             landmarks: landmarks,
             gesture: gesture,
             pinchDistance: pinchDist
@@ -92,7 +89,7 @@ export class HandInput {
             else {
                 this.smoothedLeft.x = this.lerp(this.smoothedLeft.x, handInfo.x, this.smoothingFactor);
                 this.smoothedLeft.y = this.lerp(this.smoothedLeft.y, handInfo.y, this.smoothingFactor);
-                this.smoothedLeft.gesture = handInfo.gesture; // Update gesture immediately
+                this.smoothedLeft.gesture = handInfo.gesture; 
                 this.smoothedLeft.pinchDistance = handInfo.pinchDistance;
             }
             this.handsData.left = this.smoothedLeft;
@@ -109,9 +106,7 @@ export class HandInput {
         }
       }
     }
-    // Reset if hands lost? No, onResults clears handsData every frame anyway.
-    // But we should probably reset smoothed state if hand is lost for a while to avoid "flying" from old pos.
-    // For now, simple logic:
+    
     if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
         this.smoothedLeft = null;
         this.smoothedRight = null;
@@ -125,15 +120,6 @@ export class HandInput {
   }
 
   detectGesture(landmarks) {
-    // Simple logic
-    // Fist: Fingertips below knuckles (roughly, depending on orientation). 
-    // For simplicity: Check if tips are close to palm center compared to knuckles.
-    
-    // Easier: Check open/closed state of fingers
-    const isThumbOpen = landmarks[4].x < landmarks[3].x; // Assuming right hand palm facing camera? No, too complex for generic.
-    
-    // Y-check (assuming hand is upright)
-    // 8 (Index Tip) < 6 (Index PIP) -> Open
     const fingers = [8, 12, 16, 20];
     const knuckles = [6, 10, 14, 18];
     
@@ -145,7 +131,6 @@ export class HandInput {
     if (openCount === 0) return 'fist';
     if (openCount === 4) return 'open';
     
-    // Pinch check
     const pinchDist = Math.hypot(landmarks[4].x - landmarks[8].x, landmarks[4].y - landmarks[8].y);
     if (pinchDist < 0.05) return 'pinch';
     

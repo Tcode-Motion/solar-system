@@ -7,41 +7,70 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000000); // Ensure black background
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000); 
 
+// --- Renderer Setup (Robust Fallback for Old GPUs) ---
+const canvas = document.createElement('canvas');
+canvas.id = 'glCanvas';
+document.body.appendChild(canvas);
+
 let renderer;
+let is3D = true;
+
 try {
-    renderer = new THREE.WebGLRenderer({ antialias: true });
+    // Attempt 1: High Quality
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
 } catch (e) {
     console.warn("WebGL Antialiasing failed, falling back to basic renderer.", e);
     try {
-        renderer = new THREE.WebGLRenderer({ antialias: false });
+        // Attempt 2: Basic
+        renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: false, alpha: false, powerPreference: 'default' });
     } catch (e2) {
         console.warn("Basic WebGL failed, trying low-spec mode.", e2);
         try {
+            // Attempt 3: Potato Mode (Low Precision)
             renderer = new THREE.WebGLRenderer({ 
+                canvas: canvas,
                 antialias: false, 
+                alpha: false,
                 powerPreference: 'low-power',
-                precision: 'mediump',
+                precision: 'lowp', // Lowest precision
                 depth: true,
                 stencil: false,
-                failIfMajorPerformanceCaveat: false
+                failIfMajorPerformanceCaveat: false // Allow software rendering if hardware fails
             });
-        } catch (e3) {
-            console.error("Critical WebGL Error:", e3);
-            document.body.innerHTML = '<div style="color:red; font-size:20px; padding:20px; background:white;">CRITICAL ERROR: Could not create WebGL Context.<br>1. Close other tabs (especially 3D/Video).<br>2. Restart your browser.<br>3. Check your graphics drivers.<br>Error: ' + e3.message + '</div>';
-            throw e3;
+        } catch (e3) {            console.error("Critical WebGL Error:", e3);
+            is3D = false;
+            // Fallback to 2D Mode
+            start2DFallbackMode();
         }
     }
 }
 
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(1); // Performance mode: max 1.0
-renderer.domElement.style.position = 'absolute';
-renderer.domElement.style.top = '0';
-renderer.domElement.style.left = '0';
-renderer.domElement.style.zIndex = '0'; 
-document.body.appendChild(renderer.domElement);
-document.body.style.backgroundColor = '#000000'; // HTML background black
+if (is3D) {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(1);
+    renderer.domElement.style.position = 'absolute';
+    renderer.domElement.style.top = '0';
+    renderer.domElement.style.left = '0';
+    renderer.domElement.style.zIndex = '0';
+}
 
+function start2DFallbackMode() {
+    if (canvas) canvas.remove();
+    document.body.style.backgroundColor = '#000000';
+    document.body.innerHTML += '<div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); color:white; text-align:center;">' +
+        '<h1>3D Acceleration Unavailable</h1>' +
+        '<p>Your device cannot run the 3D simulation. <br>Switching to 2D compatibility view.</p>' +
+        '<div id="solar-2d" style="position:relative; width:600px; height:600px; border:1px solid #333; border-radius:50%; margin:20px auto;">' +
+        '   <div style="position:absolute; top:50%; left:50%; width:40px; height:40px; background:yellow; border-radius:50%; transform:translate(-50%, -50%); box-shadow:0 0 20px orange;"></div>' + // Sun
+        '   <div style="position:absolute; top:50%; left:50%; width:200px; height:200px; border:1px solid #444; border-radius:50%; transform:translate(-50%, -50%); animation: spin 4s linear infinite;">' +
+        '       <div style="position:absolute; top:0; left:50%; width:10px; height:10px; background:blue; border-radius:50%; transform:translate(-50%, -50%);"></div>' + // Earth
+        '   </div>' +
+        '</div>' +
+        '<style>@keyframes spin { 100% { transform:translate(-50%, -50%) rotate(360deg); } }</style>' +
+        '</div>';
+}
+
+document.body.style.backgroundColor = '#000000';
 // --- UI Elements ---
 const statusDiv = document.createElement('div');
 statusDiv.style.position = 'absolute';
@@ -68,7 +97,7 @@ settingsPanel.style.border = '1px solid #444';
 settingsPanel.style.zIndex = '1000';
 
 const settingsHTML = '<h3>Settings</h3>' +
-    '<label><input type="checkbox" id="chkCamera" checked> Enable Camera (Hand Control)</label><br>' +
+    '<label><input type="checkbox" id="chkCamera"> Enable Camera (Hand Control)</label><br>' +
     '<label><input type="checkbox" id="chkAudio"> Enable Audio</label><br>';
 settingsPanel.innerHTML = settingsHTML;
 document.body.appendChild(settingsPanel);
@@ -99,18 +128,20 @@ function logError(err) {
 
 // --- World Init ---
 let planetsSystem;
-try {
-    planetsSystem = new Planets(scene);
-    planetsSystem.init(camera);
-    console.log("Planets System Initialized");
-    if (loadingDiv) loadingDiv.style.display = 'none';
-} catch (e) {
-    logError("Error Initializing Planets: " + e.message);
+if (is3D) {
+    try {
+        planetsSystem = new Planets(scene);
+        planetsSystem.init(camera);
+        console.log("Planets System Initialized");
+        if (loadingDiv) loadingDiv.style.display = 'none';
+    } catch (e) {
+        logError("Error Initializing Planets: " + e.message);
+    }
 }
 
 // Audio Handling
 chkAudio.addEventListener('change', () => {
-    if (planetsSystem && planetsSystem.audioListener) {
+    if (is3D && planetsSystem && planetsSystem.audioListener) {
         if (chkAudio.checked) {
             if (planetsSystem.audioListener.context.state === 'suspended') {
                 planetsSystem.audioListener.context.resume();
@@ -123,7 +154,7 @@ chkAudio.addEventListener('change', () => {
 });
 
 window.addEventListener('click', () => {
-    if (chkAudio.checked && planetsSystem && planetsSystem.audioListener && planetsSystem.audioListener.context.state === 'suspended') {
+    if (is3D && chkAudio.checked && planetsSystem && planetsSystem.audioListener && planetsSystem.audioListener.context.state === 'suspended') {
         planetsSystem.audioListener.context.resume();
     }
 });
@@ -140,29 +171,49 @@ let targetRadius = cameraRadius;
 
 let targetPosition = new THREE.Vector3(0,0,0); 
 let currentTarget = null; 
+let reticle = null; // Declare globally
 
-const cameraLight = new THREE.PointLight(0xffffff, 0.5, 200);
-camera.add(cameraLight);
-scene.add(camera);
+if (is3D) {
+    const cameraLight = new THREE.PointLight(0xffffff, 0.5, 200);
+    camera.add(cameraLight);
+    scene.add(camera);
 
-// Target Reticle
-const reticleGeo = new THREE.RingGeometry(1, 1.1, 32);
-const reticleMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
-const reticle = new THREE.Mesh(reticleGeo, reticleMat);
-reticle.visible = false;
-scene.add(reticle);
+    // Target Reticle
+    const reticleGeo = new THREE.RingGeometry(1, 1.1, 32);
+    const reticleMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+    reticle = new THREE.Mesh(reticleGeo, reticleMat); // Assign to global
+    reticle.visible = false;
+    scene.add(reticle);
+}
 
 // --- Input Setup ---
 const videoElement = document.getElementById('input_video');
 const canvasElement = document.getElementById('output_canvas');
 let handInput = null;
 
-try {
-    handInput = new HandInput(videoElement, canvasElement);
-    handInput.init().catch(e => logError("HandInput Init Failed: " + e.message));
-} catch (e) {
-    logError("HandInput Constructor Failed: " + e.message);
-}
+// Lazy Load Hand Input (Only when requested)
+chkCamera.addEventListener('change', () => {
+    if (chkCamera.checked) {
+        if (!handInput) {
+            statusDiv.innerText = "System: Initializing Hand Tracking...";
+            try {
+                handInput = new HandInput(videoElement, canvasElement);
+                handInput.init()
+                    .then(() => { statusDiv.innerText = "System: Hand Tracking Ready"; })
+                    .catch(e => {
+                        logError("HandInput Init Failed: " + e.message);
+                        chkCamera.checked = false; // Disable if failed
+                    });
+            } catch (e) {
+                logError("HandInput Constructor Failed: " + e.message);
+                chkCamera.checked = false;
+            }
+        }
+    } else {
+        // Optional: Stop camera if unchecked (requires HandInput support, ignoring for now to keep simple)
+        statusDiv.innerText = "System: Hand Tracking Disabled";
+    }
+});
 
 const raycaster = new THREE.Raycaster();
 let highlightedPlanet = null;
@@ -172,83 +223,94 @@ let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
 let mouseNdc = new THREE.Vector2(-99, -99);
 
+// Force loading screen to hide immediately to meet 1-3s goal
+if (loadingDiv) loadingDiv.style.display = 'none';
+
 // --- Event Listeners ---
-renderer.domElement.addEventListener('mousedown', (e) => {
-    isDragging = true;
-    previousMousePosition = { x: e.clientX, y: e.clientY };
-});
-
-renderer.domElement.addEventListener('mousemove', (e) => {
-    if (isDragging) {
-        const deltaMove = {
-            x: e.clientX - previousMousePosition.x,
-            y: e.clientY - previousMousePosition.y
-        };
-
-        const sensitivity = 0.005;
-        targetPhi -= deltaMove.x * sensitivity;
-        targetTheta -= deltaMove.y * sensitivity;
-        targetTheta = THREE.MathUtils.clamp(targetTheta, 0.1, Math.PI - 0.1);
-
+if (is3D) {
+    renderer.domElement.addEventListener('mousedown', (e) => {
+        isDragging = true;
         previousMousePosition = { x: e.clientX, y: e.clientY };
-    }
-    
-    const rect = renderer.domElement.getBoundingClientRect();
-    mouseNdc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    mouseNdc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-});
+    });
 
-renderer.domElement.addEventListener('mouseup', () => {
-    isDragging = false;
-});
+    renderer.domElement.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            const deltaMove = {
+                x: e.clientX - previousMousePosition.x,
+                y: e.clientY - previousMousePosition.y
+            };
 
-renderer.domElement.addEventListener('dblclick', () => {
-    if (highlightedPlanet) {
-        if (highlightedPlanet.name === 'Sun') {
-            currentTarget = null;
-            if (planetsSystem) planetsSystem.setPausedPlanet(null);
-            targetPosition.set(0,0,0);
-            targetRadius = 100;
-        } else {
-            currentTarget = highlightedPlanet;
-            if (planetsSystem) {
-                const pauseName = currentTarget.type === 'moon' ? currentTarget.parentName : currentTarget.name;
-                planetsSystem.setPausedPlanet(pauseName);
-            }
-            // Set comfortable viewing distance
-            targetRadius = (currentTarget.radius || 1) * 4.0;
+            const sensitivity = 0.005;
+            targetPhi -= deltaMove.x * sensitivity;
+            targetTheta -= deltaMove.y * sensitivity;
+            targetTheta = THREE.MathUtils.clamp(targetTheta, 0.1, Math.PI - 0.1);
+
+            previousMousePosition = { x: e.clientX, y: e.clientY };
         }
-    }
-});
+        
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouseNdc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        mouseNdc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    });
 
-renderer.domElement.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    const zoomSensitivity = 0.1;
-    targetRadius += e.deltaY * zoomSensitivity;
-    
-    // Dynamic minimum distance based on target size
-    const minR = currentTarget ? (currentTarget.radius || 1) * 2.0 : 5;
-    targetRadius = THREE.MathUtils.clamp(targetRadius, minR, 400);
-});
+    renderer.domElement.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
 
-renderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
+    renderer.domElement.addEventListener('dblclick', () => {
+        if (highlightedPlanet) {
+            if (highlightedPlanet.name === 'Sun') {
+                currentTarget = null;
+                if (planetsSystem) planetsSystem.setPausedPlanet(null);
+                targetPosition.set(0,0,0);
+                targetRadius = 100;
+            } else {
+                currentTarget = highlightedPlanet;
+                if (planetsSystem) {
+                    const pauseName = currentTarget.type === 'moon' ? currentTarget.parentName : currentTarget.name;
+                    planetsSystem.setPausedPlanet(pauseName);
+                }
+                // Set comfortable viewing distance
+                targetRadius = (currentTarget.radius || 1) * 4.0;
+            }
+        }
+    });
 
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-});
+    renderer.domElement.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const zoomSensitivity = 0.1;
+        targetRadius += e.deltaY * zoomSensitivity;
+        
+        // Dynamic minimum distance based on target size
+        const minR = currentTarget ? (currentTarget.radius || 1) * 2.0 : 5;
+        targetRadius = THREE.MathUtils.clamp(targetRadius, minR, 400);
+    });
+
+    renderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+}
 
 // --- Main Loop ---
 const clock = new THREE.Clock();
 let frameCount = 0;
 
 function animate() {
+    if (!is3D) return; // Stop loop in 2D mode
+
     requestAnimationFrame(animate);
     
+    // Performance: Cap to ~30 FPS for old laptops
+    frameCount++;
+    if (frameCount % 2 !== 0) return;
+
     try {
-        frameCount++;
-        const delta = clock.getDelta();
+        const delta = clock.getDelta(); // Note: getDelta is measured since *last call*, so calling it here captures the full duration of the skipped frame too.
+
 
         // 1. Physics Update
         if (planetsSystem) planetsSystem.animate(delta);
@@ -356,26 +418,27 @@ function animate() {
                     highlightedPlanet = found;
                     
                     // Slow down the hovered planet (or parent of moon) for easier targeting
-                    if (planetsSystem) {
-                        const sysName = found.type === 'moon' ? found.parentName : found.name;
-                        planetsSystem.setHoveredPlanet(sysName);
-                    }
-                    
-                    reticle.visible = true;
-                    if (found.name === 'Sun') {
-                         reticle.position.copy(planetsSystem.sunMesh.getWorldPosition(new THREE.Vector3()));
-                         reticle.scale.setScalar(6);
-                    } else if (found.name === 'Supermassive Black Hole') {
-                         reticle.position.copy(planetsSystem.blackHole.group.getWorldPosition(new THREE.Vector3()));
-                         reticle.scale.setScalar(100); 
-                    } else {
-                         reticle.position.copy(found.mesh.getWorldPosition(new THREE.Vector3()));
-                         // Moons are small, ensure reticle is visible
-                         const r = found.radius || 1;
-                         reticle.scale.setScalar(r * 2.5);
-                    }
-                    reticle.lookAt(camera.position);
-    
+                                    if (planetsSystem) {
+                                        const sysName = found.type === 'moon' ? found.parentName : found.name;
+                                        planetsSystem.setHoveredPlanet(sysName);
+                                    }
+                                    
+                                    if (reticle) {
+                                        reticle.visible = true;
+                                        if (found.name === 'Sun') {
+                                             reticle.position.copy(planetsSystem.sunMesh.getWorldPosition(new THREE.Vector3()));
+                                             reticle.scale.setScalar(6);
+                                        } else if (found.name === 'Supermassive Black Hole') {
+                                             reticle.position.copy(planetsSystem.blackHole.group.getWorldPosition(new THREE.Vector3()));
+                                             reticle.scale.setScalar(100); 
+                                        } else {
+                                             reticle.position.copy(found.mesh.getWorldPosition(new THREE.Vector3()));
+                                             // Moons are small, ensure reticle is visible
+                                             const r = found.radius || 1;
+                                             reticle.scale.setScalar(r * 2.5);
+                                        }
+                                        reticle.lookAt(camera.position);
+                                    }    
                     if (hasHandInput && handInput.getRightHand().gesture === 'fist') {
                         if (found.name === 'Sun') {
                             currentTarget = null;
@@ -398,7 +461,7 @@ function animate() {
             } else {
                 highlightedPlanet = null;
                 if (planetsSystem) planetsSystem.setHoveredPlanet(null);
-                reticle.visible = false;
+                if (reticle) reticle.visible = false;
                 statusDiv.innerText = `System: ${chkCamera.checked ? 'Hand' : 'Mouse'}`;
             }
         } // End Raycasting Frame Check
