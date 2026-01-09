@@ -483,4 +483,4 @@ function toggleView() {
         showSystemData(currentSystemName);
         btnToggleView.innerText = "Switch to 3D View";
     }
-}
+}// force update 
