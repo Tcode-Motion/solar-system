@@ -2,16 +2,27 @@
 <html>
 <head>
     <title>Solar System Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding-top: 20vh; }
-        .btn { display: inline-block; padding: 20px 40px; margin: 20px; border: 2px solid #fff; color: #fff; text-decoration: none; border-radius: 5px; transition: 0.3s; }
-        .v1:hover { background: #fff; color: #000; }
-        .v2:hover { background: #00ff00; color: #000; border-color: #00ff00; }
+        body { background: #000; color: white; font-family: sans-serif; text-align: center; padding-top: 15vh; margin: 0; }
+        .container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+        .box { width: 250px; padding: 40px; border: 2px solid #444; border-radius: 15px; text-decoration: none; color: white; transition: 0.3s; }
+        .box:hover { border-color: #007bff; background: #111; transform: scale(1.05); }
+        h1 { letter-spacing: 5px; margin-bottom: 50px; }
+        .v2 { border-color: #00ffcc; }
     </style>
 </head>
 <body>
-    <h1>CHOOSE YOUR EXPERIENCE</h1>
-    <a href="./v1/" class="btn v1">V1: HIGH QUALITY (PC)</a>
-    <a href="./v2/" class="btn v2">V2: OPTIMIZED (MOBILE)</a>
+    <h1>MILKY WAY EXPLORER</h1>
+    <div class="container">
+        <a href="./v1/index.html" class="box">
+            <h2>V1: PC</h2>
+            <p>High Resolution<br>Heavy Data</p>
+        </a>
+        <a href="./v2/index.html" class="box v2">
+            <h2>V2: MOBILE</h2>
+            <p>Fast Performance<br>Optimized</p>
+        </a>
+    </div>
 </body>
 </html>
