@@ -1,8 +1,89 @@
 <!DOCTYPE html>
-<html>
-<body style="background:#000;color:#fff;text-align:center;padding-top:20vh;font-family:sans-serif;">
-    <h1>SOLAR SYSTEM SELECTOR</h1>
-    <a href="./v1/" style="color:white;margin:20px;display:inline-block;">V1: HIGH QUALITY</a>
-    <a href="./v2/" style="color:#00ffcc;margin:20px;display:inline-block;">V2: MOBILE FAST</a>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milky Way Explorer | Portal</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; color: white; }
+        canvas { position: absolute; top: 0; left: 0; z-index: -1; }
+        
+        .overlay {
+            height: 100vh; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; background: rgba(0,0,0,0.3);
+        }
+
+        h1 { font-size: 3rem; letter-spacing: 10px; margin-bottom: 50px; text-transform: uppercase; text-shadow: 0 0 20px #007bff; }
+
+        .card-container { display: flex; gap: 40px; z-index: 10; }
+
+        .card {
+            width: 280px; padding: 40px; border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center; text-decoration: none; color: white;
+            transition: all 0.4s ease; cursor: pointer;
+        }
+
+        .card:hover {
+            transform: translateY(-15px) scale(1.05);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #007bff; box-shadow: 0 20px 40px rgba(0, 123, 255, 0.3);
+        }
+
+        .v1 h2 { color: #fff; }
+        .v2 h2 { color: #00ffcc; }
+
+        .btn {
+            margin-top: 20px; padding: 10px 25px; border-radius: 30px;
+            background: transparent; border: 1px solid white; display: inline-block;
+        }
+
+        .card:hover .btn { background: white; color: black; }
+    </style>
+</head>
+<body>
+    <div class="overlay">
+        <h1>Celestial Gate</h1>
+        <div class="card-container">
+            <a href="./v1/" class="card v1">
+                <h2>V1: PC</h2>
+                <p>Full Resolution Textures<br>High-Poly Planetary Models</p>
+                <div class="btn">Launch Expedition</div>
+            </a>
+            <a href="./v2/" class="card v2">
+                <h2>V2: Mobile</h2>
+                <p>Performance Optimized<br>Fast Load Times</p>
+                <div class="btn">Quick Entry</div>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Background Stars Animation
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const starGeometry = new THREE.BufferGeometry();
+        const starMaterial = new THREE.PointsMaterial({ color: 0xffffff });
+        const starVertices = [];
+        for (let i = 0; i < 10000; i++) {
+            starVertices.push((Math.random() - 0.5) * 2000, (Math.random() - 0.5) * 2000, -Math.random() * 2000);
+        }
+        starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+        const stars = new THREE.Points(starGeometry, starMaterial);
+        scene.add(stars);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            stars.rotation.z += 0.0005;
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
 </body>
 </html>
