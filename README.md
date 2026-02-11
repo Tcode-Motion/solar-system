@@ -19,4 +19,4 @@ A high-fidelity, interactive 3D simulation of our solar system built using **Thr
 ## 🚀 How to Run Locally
 1. Clone the repository:
    ```bash
-   git clone [https://github.com/tanmoy44717/solar-system.git](https://github.com/tanmoy44717/solar-system.git)
+   git clone [https://github.com/Tcode-Motion/solar-system.git](https://github.com/Tcode-Motion/solar-system.git)
