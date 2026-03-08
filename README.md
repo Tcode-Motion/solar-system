@@ -119,7 +119,7 @@ open index.html
 ```
 
 ### Option 3 — View Live Demo
-🔗 **[tanmoy44717.github.io/solar-system/](https://tanmoy44717.github.io/solar-system/)**
+🔗 **[tanmoy44717.github.io/solar-system/](https://tcode-motion.github.io/solar-system/)**
 
 ---
 
