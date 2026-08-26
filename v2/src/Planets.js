@@ -80,20 +80,21 @@ export class Planets {
         this.createTauCetiSystem();
         this.systems.push({ name: 'Tau Ceti', group: this.tauCetiGroup, dist: this.tauCetiDist, angle: this.tauCetiAngle, speed: this.tauCetiSpeed });
 
-        // 3. New Systems (Procedural, no assets)
-        const galaxyConfigs = [
-            { name: "Alpha Centauri",  dist: 220, planets: 3, starColor: 0xffdd99, starSize: 4.8 },
-            { name: "Barnard's Star",  dist: 300, planets: 2, starColor: 0xff4433, starSize: 3.0 },
-            { name: "Wolf 359",        dist: 390, planets: 2, starColor: 0xff3322, starSize: 2.8 },
-            { name: "Lalande 21185",   dist: 415, planets: 3, starColor: 0xff5544, starSize: 3.2 },
-            { name: "Epsilon Eridani", dist: 525, planets: 1, starColor: 0xffaa55, starSize: 4.2 },
-            { name: "Ross 128",        dist: 550, planets: 1, starColor: 0xff4433, starSize: 3.1 }
-        ];
+        // 3. Real Systems (TRAPPIST-1, Kepler-90, Kepler-186)
+        this.trappist1Group = new THREE.Group();
+        this.scene.add(this.trappist1Group);
+        this.createTrappist1System();
+        this.systems.push({ name: 'TRAPPIST-1', group: this.trappist1Group, dist: 250, angle: Math.PI / 2, speed: 0.0003 });
 
-        galaxyConfigs.forEach((sys, i) => {
-            const angle = (Math.PI / 3) * (i + 1);
-            this.createGenericSystem(sys, angle);
-        });
+        this.kepler90Group = new THREE.Group();
+        this.scene.add(this.kepler90Group);
+        this.createKepler90System();
+        this.systems.push({ name: 'Kepler-90', group: this.kepler90Group, dist: 350, angle: Math.PI, speed: 0.0002 });
+
+        this.kepler186Group = new THREE.Group();
+        this.scene.add(this.kepler186Group);
+        this.createKepler186System();
+        this.systems.push({ name: 'Kepler-186', group: this.kepler186Group, dist: 500, angle: 3 * Math.PI / 2, speed: 0.00015 });
         
         this.createStarfield(); 
         
@@ -104,67 +105,107 @@ export class Planets {
         }
     }
 
-        createGenericSystem(config, angle) {
-            const group = new THREE.Group();
-            this.scene.add(group);
-            
-            const starMat = new THREE.MeshBasicMaterial({
-                map: this.loadTexture('./textures/sun.jpg'),
-                color: config.starColor 
-            });
-            const star = new THREE.Mesh(this.sharedSphereGeo, starMat);        star.scale.setScalar(config.starSize);
-        group.add(star);
+    createTrappist1System() {
+        const starMat = new THREE.MeshBasicMaterial({
+            map: this.loadTexture('./textures/sun.jpg'),
+            color: 0xff6666
+        });
+        const star = new THREE.Mesh(this.sharedSphereGeo, starMat);
+        star.scale.setScalar(2.0);
+        this.trappist1Group.add(star);
 
-        const light = new THREE.PointLight(config.starColor, 1.0, 100);
-        light.castShadow = false;
-        group.add(light);
+        const light = new THREE.PointLight(0xff6666, 1.0, 150);
+        this.trappist1Group.add(light);
 
-        // Planets
-        for(let i=0; i<config.planets; i++) {
-            const planetName = `${config.name} ${String.fromCharCode(98 + i)}`;
-            const dist = 10 + (i * 6) + (config.starSize * 2); 
-            const r = 0.8 + Math.random() * 1.5;
-            const speed = 0.02 / (i + 1);
-            
+        const config = [
+            { name: 'TRAPPIST-1 b', r: 1.1, d: 8, s: 0.04, tex: 'mercury.jpg' },
+            { name: 'TRAPPIST-1 c', r: 1.0, d: 11, s: 0.035, tex: 'venus.jpg' },
+            { name: 'TRAPPIST-1 d', r: 0.7, d: 14, s: 0.03, tex: 'mars.jpg' },
+            { name: 'TRAPPIST-1 e', r: 0.9, d: 17, s: 0.025, tex: '00_earthmap1k.jpg' },
+            { name: 'TRAPPIST-1 f', r: 1.0, d: 21, s: 0.02, tex: 'venus.jpg' },
+            { name: 'TRAPPIST-1 g', r: 1.1, d: 25, s: 0.015, tex: 'mars.jpg' },
+            { name: 'TRAPPIST-1 h', r: 0.7, d: 30, s: 0.01, tex: 'moon.jpg' }
+        ];
+
+        this.createSystemPlanets(this.trappist1Group, config, 'TRAPPIST-1');
+    }
+
+    createKepler90System() {
+        const starMat = new THREE.MeshBasicMaterial({
+            map: this.loadTexture('./textures/sun.jpg'),
+            color: 0xffffff
+        });
+        const star = new THREE.Mesh(this.sharedSphereGeo, starMat);
+        star.scale.setScalar(5.2);
+        this.kepler90Group.add(star);
+
+        const light = new THREE.PointLight(0xffffff, 1.5, 250);
+        this.kepler90Group.add(light);
+
+        const config = [
+            { name: 'Kepler-90 b', r: 1.3, d: 15, s: 0.03, tex: 'mercury.jpg' },
+            { name: 'Kepler-90 c', r: 1.1, d: 18, s: 0.028, tex: 'venus.jpg' },
+            { name: 'Kepler-90 i', r: 1.3, d: 22, s: 0.025, tex: 'mars.jpg' },
+            { name: 'Kepler-90 d', r: 2.8, d: 30, s: 0.02, tex: 'neptune.jpg' },
+            { name: 'Kepler-90 e', r: 2.6, d: 36, s: 0.018, tex: 'uranus.jpg' },
+            { name: 'Kepler-90 f', r: 2.8, d: 42, s: 0.015, tex: 'neptune.jpg' },
+            { name: 'Kepler-90 g', r: 8.1, d: 52, s: 0.01, tex: 'saturn.jpg' },
+            { name: 'Kepler-90 h', r: 11.3, d: 65, s: 0.008, tex: 'jupiter.jpg' }
+        ];
+
+        this.createSystemPlanets(this.kepler90Group, config, 'Kepler-90');
+    }
+
+    createKepler186System() {
+        const starMat = new THREE.MeshBasicMaterial({
+            map: this.loadTexture('./textures/sun.jpg'),
+            color: 0xff9966
+        });
+        const star = new THREE.Mesh(this.sharedSphereGeo, starMat);
+        star.scale.setScalar(2.5);
+        this.kepler186Group.add(star);
+
+        const light = new THREE.PointLight(0xff9966, 1.2, 180);
+        this.kepler186Group.add(light);
+
+        const config = [
+            { name: 'Kepler-186 b', r: 1.0, d: 10, s: 0.035, tex: 'mercury.jpg' },
+            { name: 'Kepler-186 c', r: 1.2, d: 14, s: 0.03, tex: 'venus.jpg' },
+            { name: 'Kepler-186 d', r: 1.4, d: 19, s: 0.025, tex: 'mars.jpg' },
+            { name: 'Kepler-186 e', r: 1.3, d: 24, s: 0.02, tex: 'moon.jpg' },
+            { name: 'Kepler-186 f', r: 1.1, d: 32, s: 0.015, tex: '00_earthmap1k.jpg' }
+        ];
+
+        this.createSystemPlanets(this.kepler186Group, config, 'Kepler-186');
+    }
+
+    createSystemPlanets(systemGroup, configArray, systemName) {
+        configArray.forEach(cfg => {
             const pGroup = new THREE.Group();
-            this.createOrbitLine(dist, group, 0.1);
-            
-            // Random texture
-            const isGas = r > 2.0;
-            const tex = isGas ? 'jupiter.jpg' : (Math.random() > 0.5 ? 'mars.jpg' : 'venus.jpg');
-            
+            this.createOrbitLine(cfg.d, systemGroup, 0.1);
+
             const mat = new THREE.MeshBasicMaterial({ 
-                map: this.loadTexture(`./textures/${tex}`),
-                color: 0xffffff // White to show texture clearly
+                map: this.loadTexture(`./textures/${cfg.tex}`),
+                color: 0xffffff
             });
-            
             const mesh = new THREE.Mesh(this.sharedSphereGeo, mat);
-            mesh.scale.setScalar(r);
-            mesh.frustumCulled = true;
+            mesh.scale.setScalar(cfg.r);
             pGroup.add(mesh);
             
             const startAngle = Math.random() * Math.PI * 2;
-            pGroup.position.set(Math.cos(startAngle) * dist, 0, Math.sin(startAngle) * dist);
-            group.add(pGroup);
+            pGroup.position.set(Math.cos(startAngle) * cfg.d, 0, Math.sin(startAngle) * cfg.d);
+            systemGroup.add(pGroup);
             
             this.planets.push({
                 mesh: pGroup,
-                distance: dist,
-                speed: speed,
+                distance: cfg.d,
+                speed: cfg.s,
                 angle: startAngle,
-                name: planetName,
-                radius: r,
+                name: cfg.name,
+                radius: cfg.r,
                 moons: [],
-                system: config.name
+                system: systemName
             });
-        }
-
-        this.systems.push({
-            name: config.name,
-            group: group,
-            dist: config.dist,
-            angle: angle,
-            speed: 0.0002
         });
     }
 
