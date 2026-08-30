@@ -71,7 +71,7 @@ warpOverlay.innerHTML = `
         position: absolute;
         width: 200vw; height: 200vh;
         background: radial-gradient(circle, transparent 10%, #000 100%),
-                    conic-gradient(from 0deg, transparent 0%, #00ffff 10%, transparent 20%, transparent 50%, #0088ff 60%, transparent 70%);
+                    conic-gradient(from 0deg, transparent 0%, #ff00ff 10%, transparent 20%, transparent 50%, #00ff00 60%, transparent 70%);
         background-size: 100% 100%;
         opacity: 0;
         border-radius: 50%;
@@ -388,7 +388,7 @@ window.warpToSystem = function(name) {
     const startFOV = camera.fov;
     let fovFrame = 0;
     const fovInterval = setInterval(() => {
-        camera.fov = THREE.MathUtils.lerp(camera.fov, 150, 0.1);
+        camera.fov = THREE.MathUtils.lerp(camera.fov, 180, 0.1);
         camera.updateProjectionMatrix();
         fovFrame++;
         if (fovFrame > 40) clearInterval(fovInterval);
@@ -447,17 +447,30 @@ function showSystemData(sysName) {
         <button id="btnCloseTableInternal" style="background:#ff3333; color:white; border:none; padding:8px 16px; cursor:pointer; font-weight:bold; border-radius:4px;">CLOSE X</button>
     </div>
     <table style="width:100%; border-collapse:collapse;">
-    <tr style="background:#333; color:#0f0;"><th style="padding:8px; text-align:left;">Planet</th><th style="padding:8px; text-align:left;">Radius (Relative)</th><th style="padding:8px; text-align:left;">Orbit Dist</th></tr>`;
+    <tr style="background:#333; color:#0f0;">
+        <th style="padding:8px; text-align:left;">Planet</th>
+        <th style="padding:8px; text-align:left;">Radius (Relative)</th>
+        <th style="padding:8px; text-align:left;">Orbit Dist</th>
+        <th style="padding:8px; text-align:left;">Mass (Earths)</th>
+        <th style="padding:8px; text-align:left;">Gravity (m/s²)</th>
+        <th style="padding:8px; text-align:left;">Temp (°C)</th>
+    </tr>`;
     
     if (planets.length === 0) {
-        html += `<tr><td colspan="3" style="padding:15px; text-align:center; color:#888;">No planetary data available for this system.</td></tr>`;
+        html += `<tr><td colspan="6" style="padding:15px; text-align:center; color:#888;">No planetary data available for this system.</td></tr>`;
     } else {
         planets.forEach((p, i) => {
             const bg = i % 2 === 0 ? 'rgba(255,255,255,0.05)' : 'transparent';
             html += `<tr style="background:${bg}; border-bottom:1px solid #444;">
-                <td style="padding:8px;">${p.name}</td>
+                <td style="padding:8px;">
+                    <strong>${p.name}</strong>
+                    ${p.info ? `<br><span style="font-size:0.8em; color:#aaa;">${p.info}</span>` : ''}
+                </td>
                 <td style="padding:8px;">${typeof p.radius === 'number' ? p.radius.toFixed(2) : p.radius}</td>
                 <td style="padding:8px;">${typeof p.distance === 'number' ? p.distance.toFixed(0) : p.distance}</td>
+                <td style="padding:8px;">${p.mass !== undefined ? p.mass : 'N/A'}</td>
+                <td style="padding:8px;">${p.gravity !== undefined ? p.gravity : 'N/A'}</td>
+                <td style="padding:8px;">${p.temp !== undefined ? p.temp : 'N/A'}</td>
             </tr>`;
         });
     }

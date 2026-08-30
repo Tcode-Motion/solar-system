@@ -11,8 +11,8 @@ export class Planets {
         this.tempVec = new THREE.Vector3();
         
         // Shared Geometry (The Big Optimization)
-        this.sharedSphereGeo = new THREE.SphereGeometry(1, 32, 32); 
-        this.sharedLowPolyGeo = new THREE.SphereGeometry(1, 16, 16); // For moons
+        this.sharedSphereGeo = new THREE.SphereGeometry(1, 24, 24);
+        this.sharedLowPolyGeo = new THREE.SphereGeometry(1, 12, 12); // For moons
 
         // Main Groups
         this.galaxyPivot = new THREE.Group();
@@ -34,28 +34,28 @@ export class Planets {
 
         // Config Data
         this.config = [
-            { name: 'Mercury', radius: 0.8, distance: 10, speed: 0.02, type: 'mercury' },
-            { name: 'Venus',   radius: 1.2, distance: 15, speed: 0.015, type: 'venus' },
-            { name: 'Earth',   radius: 1.3, distance: 20, speed: 0.01,  type: 'earth', 
+            { name: 'Mercury', radius: 0.8, distance: 10, speed: 0.02, type: 'mercury', mass: 0.055, gravity: 3.7, temp: 167, info: "Smallest planet, closest to the sun." },
+            { name: 'Venus',   radius: 1.2, distance: 15, speed: 0.015, type: 'venus', mass: 0.815, gravity: 8.87, temp: 464, info: "Hottest planet due to runaway greenhouse effect." },
+            { name: 'Earth',   radius: 1.3, distance: 20, speed: 0.01,  type: 'earth', mass: 1, gravity: 9.8, temp: 15, info: "Our home planet, supports liquid water and life.",
               moons: [{name: 'Luna', r: 0.3, d: 2.5, s: 0.05}] 
             }, 
-            { name: 'Mars',    radius: 0.9, distance: 25, speed: 0.008, type: 'mars', 
+            { name: 'Mars',    radius: 0.9, distance: 25, speed: 0.008, type: 'mars', mass: 0.107, gravity: 3.71, temp: -65, info: "The Red Planet, known for its rusty iron surface.",
               moons: [{name: 'Phobos', r: 0.06, d: 1.4, s: 0.2}, {name: 'Deimos', r: 0.04, d: 1.8, s: 0.15}] 
             },
-            { name: 'Jupiter', radius: 3.5, distance: 35, speed: 0.004, type: 'jupiter', 
+            { name: 'Jupiter', radius: 3.5, distance: 35, speed: 0.004, type: 'jupiter', mass: 317.8, gravity: 24.79, temp: -110, info: "Largest gas giant with a Great Red Spot.",
               moons: [{name: 'Io', r: 0.25, d: 4.2, s: 0.04}, {name: 'Europa', r: 0.22, d: 4.8, s: 0.035},
                       {name: 'Ganymede', r: 0.35, d: 5.6, s: 0.03}, {name: 'Callisto', r: 0.32, d: 6.5, s: 0.025}] 
             },
-            { name: 'Saturn',  radius: 3.0, distance: 45, speed: 0.003, type: 'saturn', ring: true, 
+            { name: 'Saturn',  radius: 3.0, distance: 45, speed: 0.003, type: 'saturn', ring: true, mass: 95.16, gravity: 10.44, temp: -140, info: "Known for its extensive and beautiful ring system.",
               moons: [{name: 'Titan', r: 0.38, d: 7.5, s: 0.025}, {name: 'Enceladus', r: 0.1, d: 4.5, s: 0.05}] 
             },
-            { name: 'Uranus',  radius: 2.0, distance: 55, speed: 0.002, type: 'uranus', 
+            { name: 'Uranus',  radius: 2.0, distance: 55, speed: 0.002, type: 'uranus', mass: 14.54, gravity: 8.69, temp: -195, info: "Ice giant that rotates on its side.",
               moons: [{name: 'Titania', r: 0.15, d: 4.2, s: 0.04}, {name: 'Oberon', r: 0.14, d: 4.8, s: 0.03}] 
             },
-            { name: 'Neptune', radius: 1.9, distance: 65, speed: 0.001, type: 'neptune', 
+            { name: 'Neptune', radius: 1.9, distance: 65, speed: 0.001, type: 'neptune', mass: 17.15, gravity: 11.15, temp: -200, info: "Farthest gas giant, very windy and cold.",
               moons: [{name: 'Triton', r: 0.25, d: 3.5, s: -0.04}] 
             },
-            { name: 'Pluto',   radius: 0.4, distance: 75, speed: 0.0008, type: 'pluto', 
+            { name: 'Pluto',   radius: 0.4, distance: 75, speed: 0.0008, type: 'pluto', mass: 0.002, gravity: 0.62, temp: -225, info: "Dwarf planet in the Kuiper belt.",
               moons: [{name: 'Charon', r: 0.20, d: 0.8, s: 0.02}] 
             }
         ];
@@ -87,11 +87,16 @@ export class Planets {
             { name: "Wolf 359",        dist: 390, planets: 2, starColor: 0xff3322, starSize: 2.8 },
             { name: "Lalande 21185",   dist: 415, planets: 3, starColor: 0xff5544, starSize: 3.2 },
             { name: "Epsilon Eridani", dist: 525, planets: 1, starColor: 0xffaa55, starSize: 4.2 },
-            { name: "Ross 128",        dist: 550, planets: 1, starColor: 0xff4433, starSize: 3.1 }
+            { name: "Ross 128",        dist: 550, planets: 1, starColor: 0xff4433, starSize: 3.1 },
+            { name: "TRAPPIST-1",      dist: 600, planets: 7, starColor: 0xffaa55, starSize: 3.0 },
+            { name: "Kepler-90",       dist: 650, planets: 8, starColor: 0xffdd99, starSize: 4.0 },
+            { name: "Sirius",          dist: 150, planets: 2, starColor: 0xffffff, starSize: 6.0 },
+            { name: "Proxima Centauri",dist: 180, planets: 2, starColor: 0xff4433, starSize: 2.5 },
+            { name: "Kepler-186",      dist: 700, planets: 5, starColor: 0xff4433, starSize: 3.5 }
         ];
 
         galaxyConfigs.forEach((sys, i) => {
-            const angle = (Math.PI / 3) * (i + 1);
+            const angle = (Math.PI * 2 / galaxyConfigs.length) * i;
             this.createGenericSystem(sys, angle);
         });
         
@@ -147,6 +152,11 @@ export class Planets {
             pGroup.position.set(Math.cos(startAngle) * dist, 0, Math.sin(startAngle) * dist);
             group.add(pGroup);
             
+            // Generate some plausible procedural stats
+            const mass = (Math.random() * 5 + 0.1).toFixed(2);
+            const gravity = (Math.random() * 20 + 2).toFixed(2);
+            const temp = Math.floor(Math.random() * 600 - 200);
+
             this.planets.push({
                 mesh: pGroup,
                 distance: dist,
@@ -155,7 +165,11 @@ export class Planets {
                 name: planetName,
                 radius: r,
                 moons: [],
-                system: config.name
+                system: config.name,
+                mass: mass,
+                gravity: gravity,
+                temp: temp,
+                info: `Procedurally discovered exoplanet in the ${config.name} system.`
             });
         }
 
@@ -369,7 +383,7 @@ export class Planets {
 
             this.solarSystemGroup.add(group);
             this.planets.push({
-                mesh: group, distance: cfg.distance, speed: cfg.speed, angle, name: cfg.name, radius: cfg.radius, moons, system: 'Solar System'
+                mesh: group, distance: cfg.distance, speed: cfg.speed, angle, name: cfg.name, radius: cfg.radius, moons, system: 'Solar System', mass: cfg.mass, gravity: cfg.gravity, temp: cfg.temp, info: cfg.info
             });
         });
     }
@@ -395,7 +409,7 @@ export class Planets {
 
     createStarfield() {
         // Procedural Starfield (No Texture Download)
-        const starCount = 400; 
+        const starCount = 3000;
         const particleGeo = new THREE.BufferGeometry();
         const positions = [];
         const colors = [];
